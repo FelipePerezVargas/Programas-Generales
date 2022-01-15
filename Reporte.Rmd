@@ -1,0 +1,88 @@
+---
+title: "Reporte"
+author: "Felipe Pérez Vargas"
+date: "23/5/2021"
+output: html_document
+---
+---
+title: "Análisis Base de datos"
+author: "Felipe Pérez Vargas"
+date: "23/5/2021"
+output: html_document
+---
+
+### Introducción 
+
+Se tiene una base de datos que se desea analizar con la finalidad de atender las siguientes interrogantes:
+
+* ¿Cuál es el costo promedio?
+* ¿Existe una relación entre las variables contenidas en la base de datos?
+* Con base al análisis de la información. ¿Existe alguna manera de optimizar el costo medio?
+
+Para contestar se necesita hacer uso del análisis de datos, usando el software libre R, Excel y Power BI.
+
+### Uso de paquetes y llamado de la base de datos
+
+
+```{r,results='asis', message = FALSE, error = FALSE, warning= FALSE}
+rm(list = ls())
+library(readr)      # Lectura de base de datos csv
+library(ggplot2)    # Visualización y presentación de datos
+library(plotly)     # Interacción gráfica
+library(lubridate)  # Manipulación de fechas
+library(plyr)       # Manipulación de la  base de datos
+library(dplyr)      # Manipulación de la  base de datos
+library(ggfortify)  # Manipulación de la  base de datos
+library(fpp2)       # Análisis de series de tiempo
+library(tseries)    # Análisis de series de tiempo
+library(forecast)   # Análisis de series de tiempo
+
+```
+
+Ahora vamos vamos se va a contestar la primera pregunta con base al siguiente cálculo.
+
+Vamos a desarrolla un análisis de la serie de tiempo para poder primero pronosticar los precios futuros de al menos un seis meses. 
+
+
+```{r,results='asis', message = FALSE, error = FALSE,collapse = TRUE, warning= FALSE, include = TRUE, echo=FALSE}
+bd<-read_csv("C:/Users/Admin/Desktop/HDI/BDM.csv")
+colnames(bd)<-c('Fecha','IDU','Precio','Marca','Modelo','Refacción','NRefacción', 'Tipodetaller','NTipodetaller','Estado','Nestado','Proveedor')
+
+###################
+#Análisis Temporal#
+###################
+# Separamos la Fecha y precios promedio
+prom <- st %>%
+  group_by(Fecha) %>%
+  summarize(Precio=mean(Precio))
+# Representación gráfica interactiva de los costos por día
+g1<-ggplot(prom,aes(Fecha,Precio))+
+    geom_line(color='brown1')+
+    theme(axis.text.x=element_text(angle=90, hjust=1))+
+  labs(title = 'Serie de tiempo de precios promedios',
+              x='Tiempo', y='Valor')+
+         theme_minimal()+
+  geom_smooth(method = "loess",se = TRUE)
+g1<-ggplotly(g1);g1
+
+```
+
+
+
+
+
+
+
+```{r,results='asis', message = FALSE, error = FALSE,collapse = TRUE, warning= FALSE, include = TRUE, echo=FALSE}
+
+  
+
+
+```
+
+
+```{r,results='asis', message = FALSE, error = FALSE,collapse = TRUE, warning= FALSE, include = TRUE, echo=FALSE}
+
+
+
+```

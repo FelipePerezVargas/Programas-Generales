@@ -1,0 +1,437 @@
+---
+title: "Análisis Base de datos"
+author: "Felipe Pérez Vargas"
+date: "23/5/2021"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+### Introducción 
+
+Se tiene una base de datos que se desea analizar con la finalidad de atender las siguientes interrogantes:
+
+* ¿Cuál es el costo promedio?
+* ¿Existe una relación entre las variables contenidas en la base de datos?
+* Con base al análisis de la información. ¿Existe alguna manera de optimizar el costo medio?
+
+Para contestar se necesita hacer uso del análisis de datos, usando el software libre R, Excel y Power BI.
+
+### Uso de paquetes y llamado de la base de datos
+
+
+```{r,results='asis', message = FALSE, error = FALSE, warning= FALSE}
+rm(list = ls())
+library(readr)      # Lectura de base de datos csv
+library(ggplot2)    # Visualización y presentación de datos
+library(plotly)     # Interacción gráfica
+library(lubridate)  # Manipulación de fechas
+library(plyr)       # Manipulación de la  base de datos
+library(dplyr)      # Manipulación de la  base de datos
+library(ggfortify)  # Manipulación de la  base de datos
+library(fpp2)       # Análisis de series de tiempo
+library(tseries)    # Análisis de series de tiempo
+library(forecast)   # Análisis de series de tiempo
+
+```
+
+Ahora vamos vamos se va a contestar la primera pregunta con base al siguiente cálculo.
+
+Vamos a desarrolla un análisis de la serie de tiempo para poder primero pronosticar los precios futuros de 12 meses. 
+
+### Promedios Anuales Generales
+
+```{r,results='asis', message = FALSE, error = FALSE,collapse = TRUE, warning= FALSE, include = TRUE, echo=FALSE}
+bd<-read_csv("C:/Users/Admin/Desktop/HDI/BDM.csv")
+colnames(bd)<-c('Fecha','IDU','Precio','Marca','Modelo','Refacción','NRefacción', 'Tipodetaller','NTipodetaller','Estado','Nestado','Proveedor')
+
+###################
+#Análisis Temporal#
+###################
+# Separamos la Fecha y precios promedio
+st <- bd %>% select(Fecha, Precio)
+prom <- st %>%
+  group_by(Fecha) %>%
+  summarize(Precio=mean(Precio))
+print(paste('El costo promedio anual es de:',round(mean(st$Precio),2)))
+
+stpre<-ts(prom$Precio, start = 1, frequency = 6)
+g1<-autoplot(stpre, ts.colour ='brown1')+
+         labs(title = 'Serie de tiempo de precios promedios',
+              x='Tiempo', y='Valor')+
+  theme(axis.text.x=element_text(angle=90, hjust=1))+
+         theme_minimal()
+g1<-ggplotly(g1);g1
+
+fit<-decompose(stpre, type = 'multiplicative')
+autoplot(fit)+
+  labs(title = 'Serie de tiempo de precios promedios',
+              x='Tiempo', y='Valor')+
+  theme(axis.text.x=element_text(angle=90, hjust=1))+
+         theme_minimal()
+
+g2<-autoplot(stpre, series='Serie de Tiempo')+
+  autolayer(trendcycle(fit), series='Tendencia')+labs(title = 'Serie de tiempo de precios promedios',
+              x='Tiempo', y='Valor')+
+  theme(axis.text.x=element_text(angle=90, hjust=1))+
+         theme_minimal()
+g2<-ggplotly(g2);g2
+
+sn<-snaive(stpre, h=12)
+autoplot(sn)+
+autolayer(trendcycle(fit), series='Tendencia')+labs(title = 'Serie de tiempo de precios promedios',
+              x='Tiempo', y='Valor')+
+  theme(axis.text.x=element_text(angle=90, hjust=1))+
+         theme_minimal()
+print(paste('El costo promedio pronosticado es de ', sn[8]))
+```
+
+También podemos representarlo por estado el precio promedio asociado a su gráfico y pronóstico
+
+### Promedio por Estado
+
+
+También podemos representarlo por estado el precio promedio asociado a su gráfico y pronóstico.
+
+```{r,results='asis', message = FALSE, error = FALSE,collapse = TRUE, warning= FALSE, include = TRUE, echo=FALSE}
+edo<-bd %>%
+  filter(Nestado == 'Aguascalientes' )
+st <- edo %>% select(Fecha, Precio)
+prom_e <- st %>%
+  group_by(Fecha) %>%
+  summarize(Precio=mean(Precio))
+print(paste('El costo promedio de las autopartes en el estado de Aguascalientes es:',round(mean(edo$Precio),3)))
+g1<-ggplot(prom_e,aes(Fecha,Precio))+
+    geom_line(color='brown1')+
+    theme(axis.text.x=element_text(angle=90,hjust=1))+
+  labs(title = 'Serie de tiempo de precios promedios',
+              x='Tiempo', y='Valor')+
+         theme_minimal()+
+  geom_smooth(method = "loess",se = TRUE)
+g1<-ggplotly(g1);g1
+
+
+stpre<-ts(prom_e$Precio, start = 1, frequency = 12)
+g1<-autoplot(stpre, ts.colour ='brown1')+
+         labs(title = 'Serie de tiempo de precios promedios',
+              x='Tiempo', y='Valor')+
+  theme(axis.text.x=element_text(angle=90, hjust=1))+
+         theme_minimal()
+g1<-ggplotly(g1);g1
+
+fit<-decompose(stpre, type = 'multiplicative')
+autoplot(fit)+
+  labs(title = 'Serie de tiempo de precios promedios',
+              x='Tiempo', y='Valor')+
+  theme(axis.text.x=element_text(angle=90, hjust=1))+
+         theme_minimal()
+
+g2<-autoplot(stpre, series='Serie de Tiempo')+
+  autolayer(trendcycle(fit), series='Tendencia')+labs(title = 'Serie de tiempo de precios promedios',
+              x='Tiempo', y='Valor')+
+  theme(axis.text.x=element_text(angle=90, hjust=1))+
+         theme_minimal()
+g2<-ggplotly(g2);g2
+
+sn<-snaive(stpre, h=12)
+autoplot(sn)+
+autolayer(trendcycle(fit), series='Tendencia')+labs(title = 'Serie de tiempo de precios promedios',
+              x='Tiempo', y='Valor')+
+  theme(axis.text.x=element_text(angle=90, hjust=1))+
+         theme_minimal()
+print(paste('El costo promedio pronosticado es de ', sn[8]))
+```
+
+### Promedio por Taller
+
+También podemos hacer los pronósticos para cada uno de los talleres 
+
+
+```{r,results='asis', message = FALSE, error = FALSE,collapse = TRUE, warning= FALSE, include = TRUE, echo=FALSE}
+edo<-bd %>%
+  filter(Tipodetaller == 'AGENCIA' )
+st <- edo %>% select(Fecha, Precio)
+prom <- st %>%
+  group_by(Fecha) %>%
+  summarize(Precio=mean(Precio))
+print(paste('El costo promedio de las autopartes por Taller es:',round(mean(edo$Precio),3)))
+
+
+stpre<-ts(prom$Precio, start = 1, frequency = 12)
+g1<-autoplot(stpre, ts.colour ='brown1')+
+         labs(title = 'Serie de tiempo de precios promedios',
+              x='Tiempo', y='Valor')+
+  theme(axis.text.x=element_text(angle=90, hjust=1))+
+         theme_minimal()
+g1<-ggplotly(g1);g1
+
+fit<-decompose(stpre, type = 'multiplicative')
+autoplot(fit)+
+  labs(title = 'Serie de tiempo de precios promedios',
+              x='Tiempo', y='Valor')+
+  theme(axis.text.x=element_text(angle=90, hjust=1))+
+         theme_minimal()
+
+g2<-autoplot(stpre, series='Serie de Tiempo')+
+  autolayer(trendcycle(fit), series='Tendencia')+labs(title = 'Serie de tiempo de precios promedios',
+              x='Tiempo', y='Valor')+
+  theme(axis.text.x=element_text(angle=90, hjust=1))+
+         theme_minimal()
+g2<-ggplotly(g2);g2
+
+sn<-snaive(stpre, h=12)
+autoplot(sn)+
+autolayer(trendcycle(fit), series='Tendencia')+labs(title = 'Serie de tiempo de precios promedios',
+              x='Tiempo', y='Valor')+
+  theme(axis.text.x=element_text(angle=90, hjust=1))+
+         theme_minimal()
+print(paste('El costo promedio pronosticado es de ', sn[8]))
+```
+
+### Promedio por Refacción
+
+También podemos hacer los pronósticos para cada uno de las refacciones 
+
+
+```{r,results='asis', message = FALSE, error = FALSE,collapse = TRUE, warning= FALSE, include = TRUE, echo=FALSE}
+edo<-bd %>%
+  filter(Refacción == 'CALAVERA' )
+st <- edo %>% select(Fecha, Precio)
+prom <- st %>%
+  group_by(Fecha) %>%
+  summarize(Precio=mean(Precio))
+print(paste('El costo promedio de las autopartes  es:',round(mean(edo$Precio),3)))
+
+
+stpre<-ts(prom$Precio, start = 1, frequency = 12)
+g1<-autoplot(stpre, ts.colour ='brown1')+
+         labs(title = 'Serie de tiempo de precios promedios',
+              x='Tiempo', y='Valor')+
+  theme(axis.text.x=element_text(angle=90, hjust=1))+
+         theme_minimal()
+g1<-ggplotly(g1);g1
+
+fit<-decompose(stpre, type = 'multiplicative')
+autoplot(fit)+
+  labs(title = 'Serie de tiempo de precios promedios',
+              x='Tiempo', y='Valor')+
+  theme(axis.text.x=element_text(angle=90, hjust=1))+
+         theme_minimal()
+
+g2<-autoplot(stpre, series='Serie de Tiempo')+
+  autolayer(trendcycle(fit), series='Tendencia')+labs(title = 'Serie de tiempo de precios promedios',
+              x='Tiempo', y='Valor')+
+  theme(axis.text.x=element_text(angle=90, hjust=1))+
+         theme_minimal()
+g2<-ggplotly(g2);g2
+
+sn<-snaive(stpre, h=12)
+autoplot(sn)+
+autolayer(trendcycle(fit), series='Tendencia')+labs(title = 'Serie de tiempo de precios promedios',
+              x='Tiempo', y='Valor')+
+  theme(axis.text.x=element_text(angle=90, hjust=1))+
+         theme_minimal()
+print(paste('El costo promedio pronosticado es de ', sn[8]))
+```
+
+### Promedio por Marca
+
+También podemos hacer los pronósticos para cada uno de las Marca 
+
+
+```{r,results='asis', message = FALSE, error = FALSE,collapse = TRUE, warning= FALSE, include = TRUE, echo=FALSE}
+edo<-bd %>%
+  filter(Marca == 'VOLKSWAGEN' )
+st <- edo %>% select(Fecha, Precio)
+prom <- st %>%
+  group_by(Fecha) %>%
+  summarize(Precio=mean(Precio))
+top_n(prom, n())
+print(paste('El costo promedio por Marca es:',round(mean(edo$Precio),3)))
+
+
+stpre<-ts(prom$Precio, start = 1, frequency = 12)
+g1<-autoplot(stpre, ts.colour ='brown1')+
+         labs(title = 'Serie de tiempo de precios promedios',
+              x='Tiempo', y='Valor')+
+  theme(axis.text.x=element_text(angle=90, hjust=1))+
+         theme_minimal()
+g1<-ggplotly(g1);g1
+
+fit<-decompose(stpre, type = 'multiplicative')
+autoplot(fit)+
+  labs(title = 'Serie de tiempo de precios promedios',
+              x='Tiempo', y='Valor')+
+  theme(axis.text.x=element_text(angle=90, hjust=1))+
+         theme_minimal()
+
+g2<-autoplot(stpre, series='Serie de Tiempo')+
+  autolayer(trendcycle(fit), series='Tendencia')+labs(title = 'Serie de tiempo de precios promedios',
+              x='Tiempo', y='Valor')+
+  theme(axis.text.x=element_text(angle=90, hjust=1))+
+         theme_minimal()
+g2<-ggplotly(g2);g2
+
+sn<-snaive(stpre, h=12)
+autoplot(sn)+
+autolayer(trendcycle(fit), series='Tendencia')+labs(title = 'Serie de tiempo de precios promedios',
+              x='Tiempo', y='Valor')+
+  theme(axis.text.x=element_text(angle=90, hjust=1))+
+         theme_minimal()
+print(paste('El costo promedio pronosticado es de ', sn[8]))
+```
+
+
+Para no hacer más extenso se pueden hacer las combinaciones posibles y sus pronósticos por ejemplo:
+
+* Modelo
+* Identificador
+* Fecha-Modelo
+* Fecha-Modelo-Tipo de Taller
+* Fecha-Tipos de Taller-Refacción
+```{r, message = FALSE, error = FALSE,collapse = TRUE, warning= FALSE, include = TRUE, echo=FALSE}
+ # fecha<-filter(bd,bd1[,1]>='2019/01/01' &  bd1[,1]<='2019/12/30',bd[,8]=='Aguascalientes' & bd[,9]== 'CALAVERA')
+```
+
+Ahora podemos sacar la correlación entre las variables de interés
+
+
+#### Correlación de precio, refacción, tipo de taller y estado
+
+```{r, message = FALSE, error = FALSE,collapse = TRUE, warning= FALSE, include = TRUE, echo=FALSE}
+
+st<-bd %>% select(Precio,NRefacción, NTipodetaller)
+round(cor(st),4)
+```
+
+### Correlación por Estado
+
+```{r, message = FALSE, error = FALSE,collapse = TRUE, warning= FALSE}
+#Aguascalientes
+fe<-filter(bd, Estado==1)
+st<-fe %>% select(Precio,NRefacción, NTipodetaller)
+round(cor(st),4)
+#Baja California
+fe<-filter(bd, Estado==2)
+st<-fe %>% select(Precio,NRefacción, NTipodetaller)
+round(cor(st),4)
+#Baja California Sur
+fe<-filter(bd, Estado==3)
+st<-fe %>% select(Precio,NRefacción, NTipodetaller)
+round(cor(st),4)
+#Campeche
+fe<-filter(bd, Estado==4)
+st<-fe %>% select(Precio,NRefacción, NTipodetaller)
+round(cor(st),4)
+#Coahuila de Zaragoza
+fe<-filter(bd, Estado==5)
+st<-fe %>% select(Precio,NRefacción, NTipodetaller)
+round(cor(st),4)
+```
+
+### Correlación por taller
+
+```{r, message = FALSE, error = FALSE, warning= FALSE}
+# Taller
+fe<-filter(bd, NTipodetaller==1)
+st<-fe %>% select(Precio,NRefacción, Estado)
+round(cor(st),4)
+# Agencia
+fe<-filter(bd, NTipodetaller==2)
+st<-fe %>% select(Precio,NRefacción, Estado)
+round(cor(st),4)
+# Agencia Multimarca 
+fe<-filter(bd, NTipodetaller==3)
+st<-fe %>% select(Precio,NRefacción, Estado)
+round(cor(st),4)
+
+```
+
+### Correlación en función de las refacciones
+
+```{r, message = FALSE, error = FALSE, warning= FALSE}
+# Calavera 
+fe<-filter(bd, NRefacción==1)
+st<-fe %>% select(Precio,NTipodetaller, Estado)
+round(cor(st),4)
+# Facia Delantera 
+fe<-filter(bd, NRefacción==2)
+st<-fe %>% select(Precio,NTipodetaller, Estado)
+round(cor(st),4)
+# Facia Trasera
+fe<-filter(bd, NRefacción==3)
+st<-fe %>% select(Precio,NTipodetaller, Estado)
+round(cor(st),4)
+# Faro
+fe<-filter(bd, NRefacción==4)
+st<-fe %>% select(Precio,NTipodetaller, Estado)
+round(cor(st),4)
+# Guardafango 
+fe<-filter(bd, NRefacción==5)
+st<-fe %>% select(Precio,NTipodetaller, Estado)
+round(cor(st),4)
+# Moldura 
+fe<-filter(bd, NRefacción==6)
+st<-fe %>% select(Precio,NTipodetaller, Estado)
+round(cor(st),4)
+# Parrilla 
+fe<-filter(bd, NRefacción==7)
+st<-fe %>% select(Precio,NTipodetaller, Estado)
+round(cor(st),4)
+# Rin 
+fe<-filter(bd, NRefacción==8)
+st<-fe %>% select(Precio,NTipodetaller, Estado)
+round(cor(st),4)
+# Salpicadera
+fe<-filter(bd, NRefacción==9)
+st<-fe %>% select(Precio,NTipodetaller, Estado)
+round(cor(st),4)
+
+
+```
+También podemos hacer un conteo de los top n de cada uno de los parámetros de interés 
+
+```{r, message = FALSE, error = FALSE,collapse = TRUE, warning= FALSE}
+# Top 10 en precios
+a1<-top_n(edo, 10, Precio);a1
+# Top 10 en Marcas
+a2<-top_n(bd, 10, Marca);a2
+# Top 10 en Refacciones
+a3<-top_n(bd, 10, Refacción);a3
+# Top 10 en
+a4<-top_n(bd, 10, Estado);a4
+
+
+```
+### Propuestas de mejora para disminución de precios
+
+* Para disminuir el costo de la colocación de las autopartes se debe de evitar a medida de lo posible las agencias debido a que el porcentaje en la mayoría de los estados está por arriba del 40 porciento y el costo es mayor con respecto al Taller (Power BI/Reporte/Refacción_Estado) y (Power BI/Reporte/Promedio_TipoTaller_Estado).
+
+* Sobres esa misma línea se puede concentrar las reparaciones en la Agencia Multimarca a medida de lo posible (Power BI/Reporte/Refacción_Estado).
+
+* Otra alternativa sería la compra de autopartes en estados vecinos donde se puedan adquirir más baratas según el precio promedio según el mapa mostrado en el dashboard elaborado en Power BI con nombre Reporte y en la pestaña (Power BI/Reporte/Mapa_Precio_Estado).
+
+* En las zonas como la Ciudad de México se podría llegar a un acuerdo para que se concentren en las Agencias Multimarcas para disminuir el costo promedio debido a que en la Agencia Multimarca el precio es un poco más elevado que el del taller pero si, significativo para que se pueda disminuir el costo del precio promedio (Power BI/Reporte/Refacción_Estado)
+
+* Para tener un mejor resultado en los promedios la base de datos en la marca existen varias marcas que no estan bien escritas que hacen que se dispersen los datos promedio como por ejemplo: Nissan, Nisaan,Nisan, Nissa, Nissan Sentra y Nisssan. (Power BI/Reporte/Marca_Refacción)
+
+
+* Mejorar el tiempo y calidad en el servicio de los talleres para que los asegurados prefieran el taller sobre las agencias.
+
+* Asegurar comprar futuras con un precio fijo con respecto al promedio de piezas colocadas en un horizonte de tiempo tomando como base de decisión (Power BI/Reporte/Modelo_Refacción) donde viene el número de piezas colocadas por estados, marca modelo.
+
+* Realizar convenios de pago futuros fijos con los talleres por un número por debajo del promedio de servicios al año con la finalidad de asegurar el pago de la mano de obra y evitar fluctuaciones en el precio(Power BI/Reporte/Modelo_Refacción).
+
+
+### Perspectivas 
+
+La base de datos que se asigno tiene un gran potencial para poder realizar hallazgos para la disminución de precios con la minería de datos en el
+(Power BI/Reporte/Proveedor_Taller_Refacción_Estado) se puede sacar información importante y más detalles que por el momento desconoce los parámetros de medida para determinar el costo promedio de las refacciones.
+
+
+
+
+
+
+
+
